@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>نظام الطلبات مع المهام والمؤقت وزيادة المدة</title>
+  <style>
+    /* تنسيق عام واستجابة */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      margin: 0;
+      padding: 20px;
+      direction: rtl;
+      color: #333;
+    }
+    h1, h2 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    }
+    /* استجابة لجميع الشاشات */
+    @media screen and (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+      form input, form textarea {
+        font-size: 13px;
+      }
+      .btn, .extend-btn {
+        font-size: 14px;
+        padding: 10px;
+      }
+    }
+    /* نموذج الطلب */
+    form {
+      display: grid;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    form input, form textarea {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    form textarea {
+      resize: vertical;
+      height: 80px;
+    }
+    .btn {
+      padding: 12px;
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .btn:hover {
+      background: #1558b0;
+    }
+    /* أقسام عرض الطلبات */
+    .orders-section {
+      margin-bottom: 30px;
+    }
+    .orders-section h2 {
+      background: #1a73e8;
+      color: #fff;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+    .order-card, .note-card {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #fafafa;
+      position: relative;
+    }
+    .order-card .order-info p,
+    .note-card .order-info p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    .timer {
+      font-weight: bold;
+      font-size: 16px;
+    }
+    /* قائمة المهام المصغرة */
+    .tasks {
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    .tasks ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .tasks li {
+      background: #e8f0fe;
+      padding: 4px 6px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+    }
+    .tasks li.completed {
+      background: #d4edda;
+      text-decoration: line-through;
+      color: #5f6368;
+    }
+    .tasks input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin-left: 5px;
+      cursor: pointer;
+    }
+    /* زر زيادة المدة */
+    .extend-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: #ffa000;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .extend-btn:hover {
+      background: #ff8f00;
+    }
+    /* نموذج زيادة المدة */
+    .extension {
+      margin-top: 10px;
+      padding: 10px;
+      background: #fff3cd;
+      border: 1px solid #ffeeba;
+      border-radius: 4px;
+      display: none;
+    }
+    .extension input[type="number"],
+    .extension textarea {
+      width: 100%;
+      margin-bottom: 8px;
+      padding: 6px;
+      font-size: 14px;
+    }
+    .extension label {
+      font-size: 14px;
+      margin-bottom: 5px;
+      display: block;
+    }
+    .extension .btn {
+      font-size: 14px;
+      padding: 8px;
+    }
+    /* بطاقة ملاحظة الطلبات */
+    .note-card {
+      background: #e3f2fd;
+      border: 1px solid #90caf9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>نظام تسجيل الطلبات</h1>
+    <!-- نموذج تسجيل الطلب -->
+    <form id="orderForm">
+      <input type="text" id="clientName" placeholder="اسم العميل" required>
+      <input type="text" id="clientNumber" placeholder="رقم العميل" required>
+      <input type="text" id="orderNumber" placeholder="رقم الطلب" required>
+      <textarea id="orderInfo" placeholder="معلومات الطلب" required></textarea>
+      <!-- حقل اختيار تاريخ ووقت انتهاء الطلب -->
+      <input type="datetime-local" id="orderExpiry" required>
+      <button type="submit" class="btn">حفظ الطلب</button>
+    </form>
+    
+    <!-- أقسام عرض الطلبات حسب الحالة -->
+    <div class="orders-section" id="inProgressOrders">
+      <h2>قيد التنفيذ</h2>
+      <!-- تُضاف بطاقات الطلب هنا -->
+    </div>
+    <div class="orders-section" id="completedOrders">
+      <h2>تم التنفيذ</h2>
+      <!-- الطلبات المكتملة -->
+    </div>
+    <div class="orders-section" id="lateOrders">
+      <h2>متأخر في التسليم</h2>
+      <!-- الطلبات المتأخرة -->
+    </div>
+    <div class="orders-section" id="notesOrders">
+      <h2>ملاحظات الطلبات</h2>
+      <!-- بطاقات ملاحظات الطلبات (بيانات الطلب مع الزيادة) -->
+    </div>
+  </div>
+  
+  <script>
+    // قائمة المهام الثابتة
+    const tasksList = [
+      "تسليم المتجر",
+      "اعتماد العميل",
+      "فحص المتجر",
+      "ترتيب الواجهة",
+      "تصميم CSS",
+      "تصميم بنرات",
+      "تصميم شعار",
+      "صفحات تعريفية",
+      "ربط بوابات الدفع",
+      "شركات الشحن",
+      "ربط تطبيقات",
+      "تسجيل حساب جديد",
+      "إضافة منتجات",
+      "إضافة الأقسام",
+      "ضبط الإعدادات"
+    ];
+    
+    // التعامل مع تقديم نموذج الطلب
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // الحصول على بيانات الطلب
+      const clientName   = document.getElementById('clientName').value;
+      const clientNumber = document.getElementById('clientNumber').value;
+      const orderNumber  = document.getElementById('orderNumber').value;
+      const orderInfo    = document.getElementById('orderInfo').value;
+      const orderExpiry  = document.getElementById('orderExpiry').value;
+      const expiryDate   = new Date(orderExpiry);
+      
+      // إنشاء بطاقة الطلب ووضعها بقسم "قيد التنفيذ"
+      const orderCard = createOrderCard({
+        clientName,
+        clientNumber,
+        orderNumber,
+        orderInfo,
+        expiryDate
+      });
+      
+      document.getElementById('inProgressOrders').appendChild(orderCard);
+      
+      // إعادة تعيين النموذج
+      this.reset();
+    });
+    
+    // دالة لإنشاء بطاقة الطلب مع المهام والمؤقت وزر زيادة المدة
+    function createOrderCard(orderData) {
+      const card = document.createElement('div');
+      card.className = 'order-card';
+      card.isCompleted = false; // حالة الطلب مكتمل أم لا
+      card.isLate = false;
+      card.hasExtension = false; // هل تمت زيادة المدة
+      
+      // الجزء الخاص بالمعلومات
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'order-info';
+      infoDiv.innerHTML = `
+        <p><strong>اسم العميل:</strong> ${orderData.clientName}</p>
+        <p><strong>رقم العميل:</strong> ${orderData.clientNumber}</p>
+        <p><strong>رقم الطلب:</strong> ${orderData.orderNumber}</p>
+        <p><strong>معلومات الطلب:</strong> ${orderData.orderInfo}</p>
+        <p><strong>تاريخ انتهاء الطلب:</strong> ${orderData.expiryDate.toLocaleString()}</p>
+        <p>الوقت: <span class="timer"></span></p>
+      `;
+      card.appendChild(infoDiv);
+      
+      // إنشاء قائمة المهام (بصيغة مصغرة)
+      const tasksDiv = document.createElement('div');
+      tasksDiv.className = 'tasks';
+      const ul = document.createElement('ul');
+      tasksList.forEach(task => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${task}</span>`;
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.addEventListener('change', () => {
+          if(checkbox.checked) {
+            li.classList.add('completed');
+          } else {
+            li.classList.remove('completed');
+          }
+          // التحقق من استكمال جميع المهام
+          checkOrderCompletion(card);
+        });
+        li.appendChild(checkbox);
+        ul.appendChild(li);
+      });
+      tasksDiv.appendChild(ul);
+      card.appendChild(tasksDiv);
+      
+      // زر زيادة المدة يظهر في الطلبات قيد التنفيذ
+      const extendBtn = document.createElement('button');
+      extendBtn.className = 'extend-btn';
+      extendBtn.textContent = "زيادة المدة";
+      extendBtn.addEventListener('click', () => {
+        // إظهار نموذج زيادة المدة
+        extensionDiv.style.display = extensionDiv.style.display === "block" ? "none" : "block";
+      });
+      card.appendChild(extendBtn);
+      
+      // نموذج زيادة المدة (مخفي في البداية)
+      const extensionDiv = document.createElement('div');
+      extensionDiv.className = 'extension';
+      extensionDiv.innerHTML = `
+        <label>أدخل عدد الساعات الإضافية:</label>
+        <input type="number" min="1" class="extraHours" placeholder="عدد الساعات">
+        <label>سبب زيادة المدة:</label>
+        <textarea class="extensionReason" placeholder="اكتب سبب زيادة المدة"></textarea>
+        <button class="btn">تأكيد الزيادة</button>
+      `;
+      // عند النقر على زر تأكيد الزيادة داخل النموذج
+      extensionDiv.querySelector('.btn').addEventListener('click', () => {
+        const extraHoursInput = extensionDiv.querySelector('.extraHours');
+        const reasonInput = extensionDiv.querySelector('.extensionReason');
+        const extraHours = parseInt(extraHoursInput.value);
+        const reasonText = reasonInput.value.trim();
+        if(isNaN(extraHours) || extraHours <= 0 || reasonText === "") {
+          alert("يرجى إدخال عدد ساعات صحيح وكتابة سبب الزيادة.");
+          return;
+        }
+        // تحديث تاريخ انتهاء الطلب بإضافة الساعات
+        orderData.expiryDate = new Date(orderData.expiryDate.getTime() + extraHours * 3600000);
+        // تحديث عرض تاريخ انتهاء الطلب في بطاقة الطلب
+        infoDiv.querySelector('p:nth-child(5)').innerHTML = `<strong>تاريخ انتهاء الطلب:</strong> ${orderData.expiryDate.toLocaleString()}`;
+        
+        // إنشاء بطاقة ملاحظة في قسم "ملاحظات الطلبات" تحتوي على بيانات الطلب مع الزيادة
+        const noteCard = createNoteCard(orderData, extraHours, reasonText);
+        document.getElementById('notesOrders').appendChild(noteCard);
+        
+        card.hasExtension = true;
+        // إخفاء نموذج الزيادة وزر الزيادة (حيث تبقى بيانات الطلب في قسم "قيد التنفيذ")
+        extensionDiv.style.display = "none";
+        extendBtn.style.display = "none";
+        
+        // إعادة تشغيل المؤقت بناءً على التاريخ المحدث
+        stopOrderTimer(card);
+        startOrderTimer(card, orderData.expiryDate);
+      });
+      card.appendChild(extensionDiv);
+      
+      // بدء المؤقت الخاص بالطلب
+      startOrderTimer(card, orderData.expiryDate);
+      
+      return card;
+    }
+    
+    // دالة إنشاء بطاقة ملاحظة الطلب (بدون قائمة المهام)
+    function createNoteCard(orderData, extraHours, reasonText) {
+      const noteCard = document.createElement('div');
+      noteCard.className = 'note-card';
+      noteCard.innerHTML = `
+        <div class="order-info">
+          <p><strong>اسم العميل:</strong> ${orderData.clientName}</p>
+          <p><strong>رقم العميل:</strong> ${orderData.clientNumber}</p>
+          <p><strong>رقم الطلب:</strong> ${orderData.orderNumber}</p>
+          <p><strong>معلومات الطلب:</strong> ${orderData.orderInfo}</p>
+          <p><strong>تاريخ انتهاء الطلب بعد الزيادة:</strong> ${orderData.expiryDate.toLocaleString()}</p>
+          <p><strong>مدة الزيادة:</strong> ${extraHours} ساعة</p>
+          <p><strong>سبب الزيادة:</strong> ${reasonText}</p>
+        </div>
+      `;
+      return noteCard;
+    }
+    
+    // دالة لفحص استكمال جميع المهام (إذا تم الانتهاء من المهام، ينقل الطلب إلى "تم التنفيذ")
+    function checkOrderCompletion(card) {
+      const allTasks = card.querySelectorAll('.tasks li');
+      const completedTasks = card.querySelectorAll('.tasks li.completed');
+      if(allTasks.length === completedTasks.length) {
+        card.isCompleted = true;
+        stopOrderTimer(card);
+        moveOrderCard(card, 'completedOrders');
+      }
+    }
+    
+    // دالة بدء المؤقت الخاص بالطلب
+    function startOrderTimer(card, expiryDate) {
+      const timerSpan = card.querySelector('.timer');
+      card.timerInterval = setInterval(() => {
+        const now = new Date();
+        // إذا لم يكن الطلب مكتملًا
+        if(!card.isCompleted) {
+          if (!card.isLate) {
+            const distance = expiryDate.getTime() - now.getTime();
+            if(distance > 0) {
+              const days    = Math.floor(distance / (1000 * 60 * 60 * 24));
+              const hours   = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+              const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+              const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+              timerSpan.textContent = `${days} يوم ${hours} س ${minutes} د ${seconds} ث`;
+            } else {
+              card.isLate = true;
+              timerSpan.style.color = "#d32f2f";
+              const delay = now.getTime() - expiryDate.getTime();
+              const days    = Math.floor(delay / (1000 * 60 * 60 * 24));
+              const hours   = Math.floor((delay % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+              const minutes = Math.floor((delay % (1000 * 60 * 60)) / (1000 * 60));
+              const seconds = Math.floor((delay % (1000 * 60)) / 1000);
+              timerSpan.textContent = `متأخر ${days} يوم ${hours} س ${minutes} د ${seconds} ث`;
+              moveOrderCard(card, 'lateOrders');
+            }
+          } else {
+            const delay = now.getTime() - expiryDate.getTime();
+            const days    = Math.floor(delay / (1000 * 60 * 60 * 24));
+            const hours   = Math.floor((delay % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((delay % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((delay % (1000 * 60)) / 1000);
+            timerSpan.textContent = `متأخر ${days} يوم ${hours} س ${minutes} د ${seconds} ث`;
+          }
+        }
+      }, 1000);
+    }
+    
+    // دالة إيقاف المؤقت
+    function stopOrderTimer(card) {
+      clearInterval(card.timerInterval);
+    }
+    
+    // دالة لنقل بطاقة الطلب إلى القسم المناسب (تُستخدم عند إكمال المهام أو انتهاء الوقت)
+    function moveOrderCard(card, targetSectionId) {
+      const currentParent = card.parentElement;
+      const targetSection = document.getElementById(targetSectionId);
+      if(currentParent !== targetSection) {
+        targetSection.appendChild(card);
+      }
+    }
+  </script>
+</body>
+</html>
